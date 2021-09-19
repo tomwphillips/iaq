@@ -3,9 +3,9 @@ import sqlite3
 import sys
 from unittest.mock import Mock
 
-from airlogger import read_sensor, record_reading, create_table, parse_args
-
 import pytest
+
+from airlogger import create_table, parse_args, read_sensor, record_reading
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -25,7 +25,7 @@ MOCK_READING_VALUE = 5.0
 def mock_sensor():
     reading = Mock(name="reading")
     reading.pm_ug_per_m3.return_value = MOCK_READING_VALUE
-    
+
     sensor = Mock(name="sensor")
     sensor.read.return_value = reading
     return sensor
@@ -56,13 +56,16 @@ def test_record_reading(db):
     cursor = db.cursor()
     query = "select datetimestamp, pm1_ug_per_m3, pm25_ug_per_m3, pm10_ug_per_m3 from readings"
     cursor.execute(query)
-    assert cursor.fetchone() == (datetimestamp.isoformat(sep=' '), *pm_ug_per_m3.values())
+    assert cursor.fetchone() == (
+        datetimestamp.isoformat(sep=" "),
+        *pm_ug_per_m3.values(),
+    )
     assert cursor.fetchone() is None
 
 
 def test_parse_args():
-    args = parse_args(['database.db'])
-    assert args.database == 'database.db'
+    args = parse_args(["database.db"])
+    assert args.database == "database.db"
     assert args.period == 60
     assert args.device == "/dev/ttyAMA0"
     assert args.baud_rate == 9600
