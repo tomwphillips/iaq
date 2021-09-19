@@ -1,3 +1,4 @@
+import datetime
 import sqlite3
 import sys
 from unittest.mock import Mock
@@ -31,8 +32,9 @@ def mock_sensor():
 
 
 def test_read_sensor(mock_sensor):
-    pm_ug_per_m3 = read_sensor(mock_sensor)
+    datetimestamp, pm_ug_per_m3 = read_sensor(mock_sensor)
     mock_sensor.read.assert_called_once()
+    assert datetimestamp < datetime.datetime.now()
     assert pm_ug_per_m3[1.0] == MOCK_READING_VALUE
     assert pm_ug_per_m3[2.5] == MOCK_READING_VALUE
     assert pm_ug_per_m3[10.0] == MOCK_READING_VALUE
@@ -46,11 +48,13 @@ def db():
 
 
 def test_record_reading(db):
-    reading = {1.0: 1.0, 2.5: 3.0, 10.0: 7.0}
+    datetimestamp = datetime.datetime.now()
+    pm_ug_per_m3 = {1.0: 1.0, 2.5: 3.0, 10.0: 7.0}
+    reading = (datetimestamp, pm_ug_per_m3)
     record_reading(db, reading)
 
     cursor = db.cursor()
-    query = "select pm1_ug_per_m3, pm25_ug_per_m3, pm10_ug_per_m3 from readings"
+    query = "select datetimestamp, pm1_ug_per_m3, pm25_ug_per_m3, pm10_ug_per_m3 from readings"
     cursor.execute(query)
-    assert cursor.fetchone() == tuple(reading.values())
+    assert cursor.fetchone() == (datetimestamp.isoformat(sep=' '), *pm_ug_per_m3.values())
     assert cursor.fetchone() is None
