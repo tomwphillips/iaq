@@ -3,7 +3,7 @@ import sqlite3
 import sys
 from unittest.mock import Mock
 
-from airlogger import read_sensor, record_reading, create_table
+from airlogger import read_sensor, record_reading, create_table, parse_args
 
 import pytest
 
@@ -58,3 +58,9 @@ def test_record_reading(db):
     cursor.execute(query)
     assert cursor.fetchone() == (datetimestamp.isoformat(sep=' '), *pm_ug_per_m3.values())
     assert cursor.fetchone() is None
+
+
+def test_parse_args():
+    args = parse_args(['database.db'])
+    assert args.database == 'database.db'
+    assert args.period == 60
