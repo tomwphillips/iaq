@@ -5,7 +5,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from airlogger import create_table, parse_args, read_sensor, record_reading
+from pms5003logger import create_table, parse_args, read_sensor, record_reading
 
 
 @pytest.fixture(scope="session", autouse=True)
