@@ -5,7 +5,13 @@ from unittest.mock import Mock
 
 import pytest
 
-from pms5003logger import create_table, parse_args, read_sensor, record_reading
+from pms5003logger import (
+    Measurement,
+    create_table,
+    parse_args,
+    read_sensor,
+    write_measurement,
+)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -32,12 +38,18 @@ def mock_sensor():
 
 
 def test_read_sensor(mock_sensor):
-    datetimestamp, pm_ug_per_m3 = read_sensor(mock_sensor)
+    measurements = list(read_sensor(mock_sensor))
     mock_sensor.read.assert_called_once()
-    assert datetimestamp < datetime.datetime.now()
-    assert pm_ug_per_m3[1.0] == MOCK_READING_VALUE
-    assert pm_ug_per_m3[2.5] == MOCK_READING_VALUE
-    assert pm_ug_per_m3[10.0] == MOCK_READING_VALUE
+    assert all(measurement.value == MOCK_READING_VALUE for measurement in measurements)
+    assert all(
+        measurement.datetimestamp < datetime.datetime.now()
+        for measurement in measurements
+    )
+    assert [measurement.name for measurement in measurements] == [
+        "PM1.0",
+        "PM2.5",
+        "PM10.0",
+    ]
 
 
 @pytest.fixture
@@ -47,18 +59,17 @@ def db():
     return db
 
 
-def test_record_reading(db):
-    datetimestamp = datetime.datetime.now()
-    pm_ug_per_m3 = {1.0: 1.0, 2.5: 3.0, 10.0: 7.0}
-    reading = (datetimestamp, pm_ug_per_m3)
-    record_reading(db, reading)
+def test_write_measurement(db):
+    measurement = Measurement(datetime.datetime.now(), "name", 1.0)
+    write_measurement(db, measurement)
 
     cursor = db.cursor()
-    query = "select datetimestamp, pm1_ug_per_m3, pm25_ug_per_m3, pm10_ug_per_m3 from readings"
+    query = "select datetimestamp, name, value from measurements"
     cursor.execute(query)
     assert cursor.fetchone() == (
-        datetimestamp.isoformat(sep=" "),
-        *pm_ug_per_m3.values(),
+        measurement.datetimestamp.isoformat(sep=" "),
+        measurement.name,
+        measurement.value,
     )
     assert cursor.fetchone() is None
 
@@ -66,7 +77,6 @@ def test_record_reading(db):
 def test_parse_args():
     args = parse_args(["database.db"])
     assert args.database == "database.db"
-    assert args.period == 60
     assert args.device == "/dev/ttyAMA0"
     assert args.baud_rate == 9600
     assert args.pin_enable == 22

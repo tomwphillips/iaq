@@ -2,49 +2,47 @@ import argparse
 import datetime
 import sqlite3
 import time
+from typing import Iterator, NamedTuple
 
 
 def create_table(db):
     cursor = db.cursor()
     cursor.execute(
         """
-        create table readings (
+        create table measurements (
             'datetimestamp' datetime,
-            'pm1_ug_per_m3' real,
-            'pm25_ug_per_m3' real,
-            'pm10_ug_per_m3' real
+            'name' text,
+            'value' real
         )
     """
     )
 
 
-def read_sensor(sensor):
+class Measurement(NamedTuple):
+    datetimestamp: datetime.datetime
+    name: str
+    value: float
+
+
+def read_sensor(sensor) -> Iterator[Measurement]:
     pm_sizes = [1.0, 2.5, 10.0]
-    reading = sensor.read()
-    return datetime.datetime.now(), {
-        pm_size: reading.pm_ug_per_m3(pm_size) for pm_size in pm_sizes
-    }
+    readings = sensor.read()
+    datetimestamp = datetime.datetime.now()
+    for pm_size in pm_sizes:
+        yield Measurement(datetimestamp, f"PM{pm_size}", readings.pm_ug_per_m3(pm_size))
 
 
-def record_reading(db, reading):
-    datetimestamp, pm_ug_per_m3 = reading
+def write_measurement(db, measurement) -> None:
     cursor = db.cursor()
     cursor.execute(
-        "insert into readings values  (?, ?, ?, ?)",
-        (datetimestamp, *pm_ug_per_m3.values()),
+        "insert into measurements values  (?, ?, ?)",
+        measurement,
     )
 
 
 def parse_args(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("database")
-    parser.add_argument(
-        "-p",
-        "--period",
-        type=int,
-        help="Period between measurements (seconds)",
-        default=60,
-    )
     parser.add_argument(
         "-d", "--device", default="/dev/ttyAMA0", help="Serial port to PMS5003"
     )
@@ -77,8 +75,9 @@ def main(args=None):
 
     try:
         while True:
-            reading = read_sensor(sensor)
-            record_reading(db, reading)
+            measurements = read_sensor(sensor)
+            for measurement in measurements:
+                write_measurement(db, measurement)
             time.sleep(args.period)
     finally:
         db.close()
