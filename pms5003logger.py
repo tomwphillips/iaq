@@ -71,14 +71,12 @@ def main(args=None):
     sensor = pms5003.PMS5003(
         args.device, args.baud_rate, args.pin_enable, args.pin_reset
     )
-    db = sqlite3.connection(args.database)
+    measurements = read_sensor(sensor)
 
+    db = sqlite3.connection(args.database)
     try:
-        while True:
-            measurements = read_sensor(sensor)
-            for measurement in measurements:
-                write_measurement(db, measurement)
-            time.sleep(args.period)
+        for measurement in measurements:
+            write_measurement(db, measurement)
     finally:
         db.close()
 
