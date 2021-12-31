@@ -72,7 +72,7 @@ def main(args=None):
     )
     measurements = read_sensor(sensor)
 
-    db = sqlite3.connection(args.database)
+    db = sqlite3.connect(args.database)
     try:
         for measurement in measurements:
             write_measurement(db, measurement)
