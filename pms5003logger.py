@@ -42,6 +42,7 @@ def write_measurement(db, measurement) -> None:
 def parse_args(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("database")
+    parser.add_argument("--create-table", action="store_true")
     parser.add_argument(
         "-d", "--device", default="/dev/ttyAMA0", help="Serial port to PMS5003"
     )
@@ -73,7 +74,11 @@ def main(args=None):
     measurements = read_sensor(sensor)
 
     db = sqlite3.connect(args.database)
+
     try:
+        if args.create_table:
+            create_table(db)
+
         for measurement in measurements:
             write_measurement(db, measurement)
     finally:

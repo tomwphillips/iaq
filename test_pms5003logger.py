@@ -74,10 +74,16 @@ def test_write_measurement(db):
     assert cursor.fetchone() is None
 
 
-def test_parse_args():
+def test_parse_args_to_run():
     args = parse_args(["database.db"])
     assert args.database == "database.db"
     assert args.device == "/dev/ttyAMA0"
     assert args.baud_rate == 9600
     assert args.pin_enable == 22
     assert args.pin_reset == 27
+
+
+def test_parse_args_to_create_table():
+    args = parse_args(["--create-table", "database.db"])
+    assert args.create_table is True
+    assert args.database == "database.db"
