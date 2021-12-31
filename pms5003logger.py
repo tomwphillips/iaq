@@ -1,7 +1,6 @@
 import argparse
 import datetime
 import sqlite3
-import time
 from typing import Iterator, NamedTuple
 
 
