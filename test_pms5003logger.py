@@ -53,17 +53,22 @@ def test_read_sensor(mock_sensor):
 
 
 @pytest.fixture
-def db():
-    db = sqlite3.connect(":memory:")
-    create_table(db)
-    return db
+def db_file(tmp_path):
+    filename = tmp_path / "tests.db"
+    conn = sqlite3.connect(filename)
+    create_table(conn)
+    conn.close()
+    return filename
 
 
-def test_write_measurement(db):
+def test_write_measurement(db_file):
+    conn = sqlite3.connect(db_file)
     measurement = Measurement(datetime.datetime.now(), "name", 1.0)
-    write_measurement(db, measurement)
+    write_measurement(conn, measurement)
+    conn.close()
 
-    cursor = db.cursor()
+    conn = sqlite3.connect(db_file)
+    cursor = conn.cursor()
     query = "select datetimestamp, name, value from measurements"
     cursor.execute(query)
     assert cursor.fetchone() == (

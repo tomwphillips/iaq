@@ -31,12 +31,13 @@ def read_sensor(sensor) -> Iterator[Measurement]:
         yield Measurement(datetimestamp, f"PM{pm_size}", readings.pm_ug_per_m3(pm_size))
 
 
-def write_measurement(db, measurement) -> None:
-    cursor = db.cursor()
-    cursor.execute(
-        "insert into measurements values  (?, ?, ?)",
-        measurement,
-    )
+def write_measurement(conn, measurement) -> None:
+    with conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "insert into measurements values  (?, ?, ?)",
+            measurement,
+        )
 
 
 def parse_args(args=None):
@@ -73,16 +74,16 @@ def main(args=None):
     )
     measurements = read_sensor(sensor)
 
-    db = sqlite3.connect(args.database)
+    conn = sqlite3.connect(args.database)
 
     try:
         if args.create_table:
-            create_table(db)
+            create_table(conn)
 
         for measurement in measurements:
-            write_measurement(db, measurement)
+            write_measurement(conn, measurement)
     finally:
-        db.close()
+        conn.close()
 
 
 if __name__ == "__main__":
