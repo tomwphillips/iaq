@@ -4,7 +4,7 @@ Raspberry Pi air pollution logger using [PMS5003](https://shop.pimoroni.com/prod
 
 ## Install and deploy
 
-I'm running Raspbian 10 on a Model B.
+I'm running Raspbian 10 on a Raspberry Pi (1) Model B. `pip` is slow, but works.
 
 ```
 pip3 install --upgrade git+https://github.com/tomwphillips/pms5003-logger.git
