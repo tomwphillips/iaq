@@ -42,8 +42,7 @@ def test_read_sensor(mock_sensor):
     mock_sensor.read.assert_called_once()
     assert all(measurement.value == MOCK_READING_VALUE for measurement in measurements)
     assert all(
-        measurement.datetimestamp < datetime.datetime.now()
-        for measurement in measurements
+        measurement.timestamp < datetime.datetime.now() for measurement in measurements
     )
     assert [measurement.name for measurement in measurements] == [
         "PM1.0",
@@ -73,7 +72,7 @@ def test_write_measurements(db_file):
     cursor.execute(query)
     assert cursor.fetchmany() == [
         (
-            measurement.datetimestamp,
+            measurement.timestamp,
             measurement.name,
             measurement.value,
         )

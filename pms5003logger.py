@@ -18,7 +18,7 @@ def create_table(db):
 
 
 class Measurement(NamedTuple):
-    datetimestamp: datetime.datetime
+    timestamp: datetime.datetime
     name: str
     value: float
 
@@ -26,9 +26,9 @@ class Measurement(NamedTuple):
 def read_sensor(sensor) -> Iterator[Measurement]:
     pm_sizes = [1.0, 2.5, 10.0]
     readings = sensor.read()
-    datetimestamp = datetime.datetime.now()
+    timestamp = datetime.datetime.now()
     for pm_size in pm_sizes:
-        yield Measurement(datetimestamp, f"PM{pm_size}", readings.pm_ug_per_m3(pm_size))
+        yield Measurement(timestamp, f"PM{pm_size}", readings.pm_ug_per_m3(pm_size))
 
 
 def write_measurements(conn, measurements):
