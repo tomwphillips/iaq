@@ -67,12 +67,12 @@ def test_write_measurement(db_file):
     write_measurement(conn, measurement)
     conn.close()
 
-    conn = sqlite3.connect(db_file)
+    conn = sqlite3.connect(db_file, detect_types=sqlite3.PARSE_DECLTYPES)
     cursor = conn.cursor()
-    query = "select datetimestamp, name, value from measurements"
+    query = "select timestamp, name, value from measurements"
     cursor.execute(query)
     assert cursor.fetchone() == (
-        measurement.datetimestamp.isoformat(sep=" "),
+        measurement.datetimestamp,
         measurement.name,
         measurement.value,
     )

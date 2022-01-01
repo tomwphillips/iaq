@@ -9,7 +9,7 @@ def create_table(db):
     cursor.execute(
         """
         create table measurements (
-            'datetimestamp' datetime,
+            'timestamp' timestamp,
             'name' text,
             'value' real
         )
