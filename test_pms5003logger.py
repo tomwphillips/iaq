@@ -10,7 +10,7 @@ from pms5003logger import (
     create_table,
     parse_args,
     read_sensor,
-    write_measurement,
+    write_measurements,
 )
 
 
@@ -61,22 +61,23 @@ def db_file(tmp_path):
     return filename
 
 
-def test_write_measurement(db_file):
+def test_write_measurements(db_file):
     conn = sqlite3.connect(db_file)
     measurement = Measurement(datetime.datetime.now(), "name", 1.0)
-    write_measurement(conn, measurement)
+    write_measurements(conn, [measurement])
     conn.close()
 
     conn = sqlite3.connect(db_file, detect_types=sqlite3.PARSE_DECLTYPES)
     cursor = conn.cursor()
     query = "select timestamp, name, value from measurements"
     cursor.execute(query)
-    assert cursor.fetchone() == (
-        measurement.datetimestamp,
-        measurement.name,
-        measurement.value,
-    )
-    assert cursor.fetchone() is None
+    assert cursor.fetchmany() == [
+        (
+            measurement.datetimestamp,
+            measurement.name,
+            measurement.value,
+        )
+    ]
 
 
 def test_parse_args_to_run():

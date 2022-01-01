@@ -31,12 +31,12 @@ def read_sensor(sensor) -> Iterator[Measurement]:
         yield Measurement(datetimestamp, f"PM{pm_size}", readings.pm_ug_per_m3(pm_size))
 
 
-def write_measurement(conn, measurement) -> None:
+def write_measurements(conn, measurements):
     with conn:
         cursor = conn.cursor()
-        cursor.execute(
-            "insert into measurements values  (?, ?, ?)",
-            measurement,
+        cursor.executemany(
+            "insert into measurements(timestamp, name, value) values  (?, ?, ?)",
+            measurements,
         )
 
 
@@ -80,8 +80,7 @@ def main(args=None):
         if args.create_table:
             create_table(conn)
 
-        for measurement in measurements:
-            write_measurement(conn, measurement)
+        write_measurements(conn, measurements)
     finally:
         conn.close()
 
