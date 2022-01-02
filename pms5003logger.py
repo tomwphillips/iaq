@@ -6,13 +6,37 @@ from typing import Iterator, NamedTuple
 
 def create_table(db):
     cursor = db.cursor()
-    cursor.execute(
+    cursor.executescript(
         """
         create table measurements (
             'timestamp' timestamp,
             'name' text,
             'value' real
-        )
+        );
+
+        create view smoothed_measurements as
+        select
+            timestamp,
+            name,
+            avg(value) over (
+                partition by name
+                order by timestamp
+                rows between 30 preceding and current row
+            ) as value
+        from measurements
+        where timestamp >= datetime('now', '-24 hours')
+        order by timestamp;
+
+        create view summary as
+        select
+            timestamp,
+            max(case when name = "PM1.0" then round(value, 2) end)  as 'PM1.0_30min_avg',
+            max(case when name = "PM2.5" then round(value, 2) end)  as 'PM2.5_30min_avg',
+            max(case when name = "PM10.0" then round(value, 2) end)  as 'PM10.0_30min_avg'
+        from smoothed_measurements
+        group by 1
+        order by timestamp
+        limit 1;
     """
     )
 
