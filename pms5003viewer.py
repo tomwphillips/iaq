@@ -8,12 +8,13 @@ from matplotlib.figure import Figure
 
 app = Flask(__name__)
 
-DATABASE = os.environ['LOGGER_DB']
+DATABASE = os.environ["LOGGER_DB"]
 
 
 def get_measurements(conn):
-    timestamps, values = zip(*conn.execute(
-        """
+    timestamps, values = zip(
+        *conn.execute(
+            """
         select
             timestamp,
             avg(value) over (
@@ -22,11 +23,12 @@ def get_measurements(conn):
                 rows between 30 preceding and current row
             ) as value_30min_avg
         from measurements
-        where timestamp >= datetime('now', '-24 hours') 
+        where timestamp >= datetime('now', '-24 hours')
             and name = 'PM2.5'
         order by timestamp
     """
-    ))
+        )
+    )
     return timestamps, values
 
 
@@ -40,15 +42,17 @@ def plot(timestamps, values):
 
 
 def get_conn():
-    conn = getattr(g, '_database', None)
+    conn = getattr(g, "_database", None)
     if conn is None:
-        conn = g._database = sqlite3.connect(DATABASE, detect_types=sqlite3.PARSE_DECLTYPES)
+        conn = g._database = sqlite3.connect(
+            DATABASE, detect_types=sqlite3.PARSE_DECLTYPES
+        )
     return conn
 
 
 @app.teardown_appcontext
 def close_connection(exception):
-    conn = getattr(g, '_database', None)
+    conn = getattr(g, "_database", None)
     if conn is not None:
         conn.close()
 
