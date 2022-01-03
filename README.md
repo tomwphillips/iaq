@@ -25,6 +25,8 @@ Then I added it to my cron jobs (`crontab -e`) to run every minute:
 
 ## Viewing the data
 
+### Quick checks
+
 I SSH into the Pi and get the readings by querying the SQLite database.
 There's a view called `summary` which shows the 30 minute average PM1.0, PM2.5 and PM10.0 concentration.
 
@@ -35,4 +37,10 @@ timestamp                   PM1.0_30min_avg  PM2.5_30min_avg  PM10.0_30min_avg
 2022-01-01 14:02:05.613893  4.0              6.0              6.0
 ```
 
-I tried building a Flask app to display a matplotlib graph, but had trouble installing numpy on my old Pi and not enough time to fix it.
+### Plotting
+
+I use `scp` to copy the SQLite database to my computer and then plot it using matplotlib:
+
+```
+python -m pms5003viewer pms5003.db
+```
