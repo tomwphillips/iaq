@@ -82,6 +82,18 @@ def test_write_measurements(db_file):
 def test_parse_args_to_run():
     args = parse_args(["database.db"])
     assert args.database == "database.db"
+    assert args.pms_enabled
+    assert args.scd_enabled
+
+
+def test_parse_args_disable_pm():
+    args = parse_args(["database.db", "--disable-pms"])
+    assert args.pms_enabled is False
+
+
+def test_parse_args_disable_scd40():
+    args = parse_args(["database.db", "--disable-scd"])
+    assert args.scd_enabled is False
 
 
 def test_parse_args_to_create_table():
