@@ -82,10 +82,6 @@ def test_write_measurements(db_file):
 def test_parse_args_to_run():
     args = parse_args(["database.db"])
     assert args.database == "database.db"
-    assert args.device == "/dev/ttyAMA0"
-    assert args.baud_rate == 9600
-    assert args.pin_enable == 22
-    assert args.pin_reset == 27
 
 
 def test_parse_args_to_create_table():
