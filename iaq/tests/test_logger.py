@@ -5,7 +5,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from pms5003logger import (
+from iaq.logger import (
     Measurement,
     create_table,
     parse_args,
