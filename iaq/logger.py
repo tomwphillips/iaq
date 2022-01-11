@@ -85,12 +85,15 @@ def parse_args(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("database")
     parser.add_argument("--create-table", action="store_true")
-    parser.add_argument(
+
+    sensor_group = parser.add_mutually_exclusive_group()
+    sensor_group.add_argument(
         "--disable-pms", default=True, action="store_false", dest="pms_enabled"
     )
-    parser.add_argument(
+    sensor_group.add_argument(
         "--disable-scd", default=True, action="store_false", dest="scd_enabled"
     )
+
     return parser.parse_args(args)
 
 

@@ -141,6 +141,11 @@ def test_parse_args_disable_scd40():
     assert args.scd_enabled is False
 
 
+def test_parse_args_one_sensor_must_be_enabled():
+    with pytest.raises(SystemExit):
+        parse_args(["database.db", "--disable-scd", "--disable-pms"])
+
+
 def test_parse_args_to_create_table():
     args = parse_args(["--create-table", "database.db"])
     assert args.create_table is True
