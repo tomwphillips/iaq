@@ -1,7 +1,7 @@
 import datetime
 import sqlite3
 import sys
-from unittest.mock import Mock
+from unittest.mock import Mock, PropertyMock
 
 import pytest
 
@@ -9,7 +9,8 @@ from iaq.logger import (
     Measurement,
     create_table,
     parse_args,
-    read_sensor,
+    read_pms_sensor,
+    read_scd_sensor,
     write_measurements,
 )
 
@@ -25,10 +26,13 @@ def mock_rpi_packages():
 
 
 MOCK_READING_VALUE = 5.0
+MOCK_TEMPERATURE_VALUE = 21.0
+MOCK_RELATIVE_HUMIDITY_VALUE = 50.0
+MOCK_CO2_VALUE = 500.0
 
 
 @pytest.fixture
-def mock_sensor():
+def mock_pms_sensor():
     reading = Mock(name="reading")
     reading.pm_ug_per_m3.return_value = MOCK_READING_VALUE
 
@@ -37,9 +41,9 @@ def mock_sensor():
     return sensor
 
 
-def test_read_sensor(mock_sensor):
-    measurements = list(read_sensor(mock_sensor))
-    mock_sensor.read.assert_called_once()
+def test_read_pms_sensor(mock_pms_sensor):
+    measurements = list(read_pms_sensor(mock_pms_sensor))
+    mock_pms_sensor.read.assert_called_once()
     assert all(measurement.value == MOCK_READING_VALUE for measurement in measurements)
     assert all(
         measurement.timestamp < datetime.datetime.now() for measurement in measurements
@@ -49,6 +53,47 @@ def test_read_sensor(mock_sensor):
         "PM2.5",
         "PM10.0",
     ]
+
+
+def mock_scd_sensor_factory(data_ready=[True]):
+    sensor = Mock(name="sensor")
+    type(sensor).data_ready = PropertyMock(name="data_ready", side_effect=data_ready)
+    sensor.temperature = MOCK_TEMPERATURE_VALUE
+    sensor.CO2 = MOCK_CO2_VALUE
+    sensor.relative_humidity = MOCK_RELATIVE_HUMIDITY_VALUE
+    return sensor
+
+
+def test_read_scd_sensor():
+    scd_sensor = mock_scd_sensor_factory()
+    measurements = list(read_scd_sensor(scd_sensor))
+    assert [(measurement.name, measurement.value) for measurement in measurements] == [
+        ("temperature", MOCK_TEMPERATURE_VALUE),
+        ("relative_humidity", MOCK_RELATIVE_HUMIDITY_VALUE),
+        ("CO2", MOCK_CO2_VALUE),
+    ]
+    assert all(
+        measurement.timestamp < datetime.datetime.now() for measurement in measurements
+    )
+
+
+def test_retry_read_scd_sensor_when_data_not_ready():
+    scd_sensor = mock_scd_sensor_factory(data_ready=[False, False, False, False, True])
+    measurements = list(read_scd_sensor(scd_sensor, polling_interval=0.01))
+    assert [(measurement.name, measurement.value) for measurement in measurements] == [
+        ("temperature", MOCK_TEMPERATURE_VALUE),
+        ("relative_humidity", MOCK_RELATIVE_HUMIDITY_VALUE),
+        ("CO2", MOCK_CO2_VALUE),
+    ]
+    assert all(
+        measurement.timestamp < datetime.datetime.now() for measurement in measurements
+    )
+
+
+def test_read_scd_sensor_fails_after_max_tries():
+    scd_sensor = mock_scd_sensor_factory(data_ready=[False] * 5)
+    with pytest.raises(RuntimeError):
+        list(read_scd_sensor(scd_sensor, polling_interval=0.01))
 
 
 @pytest.fixture

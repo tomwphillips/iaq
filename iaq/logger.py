@@ -1,6 +1,7 @@
 import argparse
 import datetime
 import sqlite3
+import time
 from typing import Iterator, NamedTuple
 
 
@@ -47,12 +48,28 @@ class Measurement(NamedTuple):
     value: float
 
 
-def read_sensor(sensor) -> Iterator[Measurement]:
+def read_pms_sensor(sensor) -> Iterator[Measurement]:
     pm_sizes = [1.0, 2.5, 10.0]
     readings = sensor.read()
     timestamp = datetime.datetime.now()
     for pm_size in pm_sizes:
         yield Measurement(timestamp, f"PM{pm_size}", readings.pm_ug_per_m3(pm_size))
+
+
+def read_scd_sensor(sensor, polling_interval=1) -> Iterator[Measurement]:
+    MAX_TRIES = 5
+    tries = 0
+    while tries < MAX_TRIES:
+        if not sensor.data_ready:
+            tries += 1
+            time.sleep(polling_interval)
+        else:
+            timestamp = datetime.datetime.now()
+            for name in ["temperature", "relative_humidity", "CO2"]:
+                yield Measurement(timestamp, name, getattr(sensor, name))
+            break
+    else:
+        raise RuntimeError("Exceed max attempts to check if data is ready")
 
 
 def write_measurements(conn, measurements):
@@ -78,11 +95,23 @@ def parse_args(args=None):
 
 
 def main(args=None):
-    import pms5003  # import here because running tests off-RPi imports RPi before it's mocked
+    # import here because running tests off-RPi imports RPi before it's mocked
+    import adafruit_scd4x
+    import board
+    import pms5003
 
     args = parse_args(args)
-    sensor = pms5003.PMS5003()
-    measurements = read_sensor(sensor)
+    measurements = []
+
+    if args.pms_enabled:
+        pms_sensor = pms5003.PMS5003()
+        measurements.extend(read_pms_sensor(pms_sensor))
+
+    if args.scd_enabled:
+        i2c = board.I2C()
+        scd_sensor = adafruit_scd4x.SCD4X(i2c)
+        scd_sensor.start_periodic_measurement()
+        measurements.extend(read_scd_sensor(scd_sensor))
 
     conn = sqlite3.connect(args.database)
 
