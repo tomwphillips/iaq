@@ -56,7 +56,7 @@ def read_pms_sensor(sensor) -> Iterator[Measurement]:
         yield Measurement(timestamp, f"PM{pm_size}", readings.pm_ug_per_m3(pm_size))
 
 
-def read_scd_sensor(sensor, polling_interval=1) -> Iterator[Measurement]:
+def read_scd_sensor(sensor, polling_interval=5) -> Iterator[Measurement]:
     MAX_TRIES = 5
     tries = 0
     while tries < MAX_TRIES:
